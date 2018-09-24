@@ -28,11 +28,10 @@ extern int SetConsoleLogColor(int mode);
 
 //! @brief      Setup console logger
 //!
-//! @param      logger      Logger instance
 //! @param      arg         Optional arguments
 //! @retval     Success:    0
 //! @retval     Failure:    Negative Linux errno
-extern int SetupConsoleLogger(struct logger_s logger, void *arg);
+extern int SetupConsoleLogger(void *arg);
 
 //! @brief      Console logger constructor
 //!

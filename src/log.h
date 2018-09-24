@@ -66,11 +66,10 @@ typedef struct logger_s {
 
     //! @brief      Setup handler (optional)
     //!
-    //! @param      logger      Logger instance
     //! @param      arg         Optional arguments
     //! @retval     Success:    0
     //! @retval     Failure:    Negative Linux errno
-    int (*setup)(struct logger_s logger, void *arg);
+    int (*setup)(void *arg);
 
     //! @brief      Unset handler (optional)
     //!

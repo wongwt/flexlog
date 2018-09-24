@@ -102,8 +102,7 @@ int SetConsoleLogColor(int mode) {
     return 0;
 }
 
-int SetupConsoleLogger(struct logger_s logger, void *arg) {
-    (void) logger;
+int SetupConsoleLogger(void *arg) {
     (void) arg;
 
     return SetConsoleLogColor(CONSOLE_LOG_COLOR_ON);

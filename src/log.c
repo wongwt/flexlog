@@ -213,7 +213,7 @@ int SetupLogger(int index, logger_s logger, void *arg) {
     }
 
     if (logger.setup != NULL) {
-        ret = logger.setup(logger, arg);
+        ret = logger.setup(arg);
         if (ret != 0) {
             fprintf(stderr, "Unable to setup logger: %s\n", strerror(-ret));
             goto mutex_unlock;
