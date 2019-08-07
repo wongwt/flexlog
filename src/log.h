@@ -1,170 +1,95 @@
-//! @file       log.h
-//! @brief      FlexLog logging utility
-//!
 //! @author     "Wei-Te Wong" <wongwt@wongwt.net>
-//! @copyright  Copyright 2018 Wei-Te Wong. MIT Licensed.
+//! @copyright  Copyright 2019 Wei-Te Wong. MIT Licensed.
 #ifndef FLEXLOG_LOG_H_
 #define FLEXLOG_LOG_H_
 
-#include <pthread.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
 
-//! @brief      Log type enumeration
 enum {
-    LOG_TYPE_NONE,      //!< Disable logging
-    LOG_TYPE_FATAL,     //!< Fatal
-    LOG_TYPE_ERROR,     //!< Error
-    LOG_TYPE_WARN,      //!< Warning
-    LOG_TYPE_INFO,      //!< Informative
-    LOG_TYPE_DEBUG,     //!< Debug
-    LOG_TYPE_TRACE,     //!< Trace
-    LOG_TYPE_MAX
+    LOG_TYPE_NONE,
+
+    LOG_TYPE_FATAL,
+    LOG_TYPE_ERROR,
+    LOG_TYPE_WARN,
+    LOG_TYPE_INFO,
+    LOG_TYPE_DEBUG,
+    LOG_TYPE_TRACE,
+
+    MAX_LOG_TYPE
 };
 
-//! @brief      Logger enumeration
-enum {
-    LOGGER_PRIMARY,     //!< Primary logger
-    LOGGER_SECONDARY,   //!< Secondary logger
-    LOGGER_MAX
-};
+typedef struct log_header_s {
+    const char *time;
+    const char *name;
+    uint32_t type;
+    const char *file;
+    const char *func;
+    uint32_t line;
+} log_header_s;
 
-//! @brief      Log structure
-typedef struct log_s {
-    //! @brief      Current time string
-    const char *time_str;
-
-    //! @brief      Process ID
-    pid_t pid;
-
-    //! @brief      Log type
-    int type;
-
-    //! @brief      Log type string
-    const char *type_str;
-
-    //! @brief      Function name
-    const char *func_str;
-
-    //! @brief      Line number
-    int line;
-
-    //! @brief      Log message
-    char *message;
-} log_s;
-
-//! @brief      Logger structure
 typedef struct logger_s {
-    //! @brief      Maximum level of log types to print
-    int level;
-
-    //! @brief      Print handler (mandatory)
-    //!
-    //! @param      log         Log instance
-    void (*print)(log_s *log);
-
-    //! @brief      Setup handler (optional)
-    //!
-    //! @param      arg         Optional arguments
-    //! @retval     Success:    0
-    //! @retval     Failure:    Negative Linux errno
-    int (*setup)(void *arg);
-
-    //! @brief      Unset handler (optional)
-    //!
-    //! @retval     Success:    0
-    //! @retval     Failure:    Negative Linux errno
-    int (*unset)(void);
+    uint32_t level;
+    void (*print)(log_header_s *hdr, const char *log);
 } logger_s;
 
-//! @brief      Print log
-//!
-//! @param      type        Log type
-//! @param      func        Function name
-//! @param      line        Line number
-//! @param      format      Log message format
-//! @param      ...         Optional arguments specified by format
-extern void PrintLog(int type, const char *func, int line, char *format, ...);
+extern void FlexLog(log_header_s *hdr, const char *log_format, ...);
+extern void FlexLogLock(bool lock);
+extern void FlexLogSetLevel(uint32_t index, uint32_t level);
 
-//! @brief      Set logging clock type
-//!
-//! @param      clock       Logging clock type
-//! @retval     Success:    0
-//! @retval     Failure:    Negative Linux errno
-extern int SetLogClock(clockid_t clock);
+extern bool IsPrintableLogType(uint32_t type);
+extern const char *LogTimeToStr(void);
 
-//! @brief      Set maximum level of log type to print
-//!
-//! @param      index       Logger index
-//! @param      level       Maximum level of log type to print
-//! @retval     Success:    0
-//! @retval     Failure:    Negative Linux errno
-extern int SetLogLevel(int index, int level);
+#define FLEX_LOG(log_type, ...)                                             \
+do {                                                                        \
+    log_header_s log_header = {                                             \
+        .time = LogTimeToStr(),                                             \
+        .name = "",                                                         \
+        .type = log_type,                                                   \
+        .file = __FILE__,                                                   \
+        .func = __func__,                                                   \
+        .line = __LINE__,                                                   \
+    };                                                                      \
+    FlexLog(&log_header, __VA_ARGS__);                                      \
+} while (0)
 
-//! @brief      Setup logger
-//!
-//! @param      index       Logger index
-//! @param      logger      New logger instance
-//! @param      arg         Optional arguments
-//! @retval     Success:    0
-//! @retval     Failure:    Negative Linux errno
-extern int SetupLogger(int index, logger_s logger, void *arg);
-
-//! @brief      Unset logger
-//!
-//! @param      index       Logger index
-//! @retval     Success:    0
-//! @retval     Failure:    Negative Linux errno
-extern int UnsetLogger(int index);
-
-//! @brief      Print fatal log message
-//!
-//! @param      ...         Log message
 #define FATAL(...)                                                          \
 do {                                                                        \
-    PrintLog(LOG_TYPE_FATAL, __func__, __LINE__, __VA_ARGS__);              \
-    exit(EXIT_FAILURE);                                                     \
+    if (IsPrintableLogType(LOG_TYPE_FATAL)) {                               \
+        FLEX_LOG(LOG_TYPE_FATAL, __VA_ARGS__);                              \
+        exit(EXIT_FAILURE);                                                 \
+    }                                                                       \
 } while (0)
 
-//! @brief      Print error log message
-//!
-//! @param      ...         Log message
 #define ERROR(...)                                                          \
 do {                                                                        \
-    PrintLog(LOG_TYPE_ERROR, __func__, __LINE__, __VA_ARGS__);              \
+    if (IsPrintableLogType(LOG_TYPE_ERROR))                                 \
+        FLEX_LOG(LOG_TYPE_ERROR, __VA_ARGS__);                              \
 } while (0)
 
-//! @brief      Print warning log message
-//!
-//! @param      ...         Log message
 #define WARN(...)                                                           \
 do {                                                                        \
-    PrintLog(LOG_TYPE_WARN, __func__, __LINE__, __VA_ARGS__);               \
+    if (IsPrintableLogType(LOG_TYPE_WARN))                                  \
+        FLEX_LOG(LOG_TYPE_WARN, __VA_ARGS__);                               \
 } while (0)
 
-//! @brief      Print informative log message
-//!
-//! @param      ...         Log message
 #define INFO(...)                                                           \
 do {                                                                        \
-    PrintLog(LOG_TYPE_INFO, __func__, __LINE__, __VA_ARGS__);               \
+    if (IsPrintableLogType(LOG_TYPE_INFO))                                  \
+        FLEX_LOG(LOG_TYPE_INFO, __VA_ARGS__);                               \
 } while (0)
 
-//! @brief      Print debug log message
-//!
-//! @param      ...         Log message
 #define DEBUG(...)                                                          \
 do {                                                                        \
-    PrintLog(LOG_TYPE_DEBUG, __func__, __LINE__, __VA_ARGS__);              \
+    if (IsPrintableLogType(LOG_TYPE_DEBUG))                                 \
+        FLEX_LOG(LOG_TYPE_DEBUG, __VA_ARGS__);                              \
 } while (0)
 
-//! @brief      Print trace log message
-//!
-//! @param      ...         Log message
 #define TRACE(...)                                                          \
 do {                                                                        \
-    PrintLog(LOG_TYPE_TRACE, __func__, __LINE__, __VA_ARGS__);              \
+    if (IsPrintableLogType(LOG_TYPE_TRACE))                                 \
+        FLEX_LOG(LOG_TYPE_TRACE, __VA_ARGS__);                              \
 } while (0)
 
 #endif  // FLEXLOG_LOG_H_

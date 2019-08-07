@@ -39,7 +39,7 @@ FlexLog prints logs to the console by default. After you include the headers, Fl
 
 #### Logging
 
-There are currently 6 function-like macros for logging. They are pretty straight-forward and can be used just like good old `printf`:
+There are currently 6 function-like macros for logging. They are pretty straight-forward and can be used just like `printf`:
 
 |    Macros    | Descriptions                                                                                |
 |--------------|---------------------------------------------------------------------------------------------|
@@ -52,10 +52,10 @@ There are currently 6 function-like macros for logging. They are pretty straight
 
 #### Change log time format
 
-By default, FlexLog outputs a monotonic timestamp. Monotonic timestamp is better for debugging purposes, because it is shorter, more accurate, and does not change with NTP updates. You can change the log time format to output wall clock time by calling:
+By default, FlexLog outputs a monotonic timestamp. Monotonic timestamp is better for debugging purposes, because it is shorter, more accurate, and does not change with NTP updates. You can change the log time format to output wall clock time by updating the following line in `LogTimeToStr()`:
 
 ``` c
-SetLogClock(CLOCK_REALTIME);
+static clockid_t log_clock = CLOCK_REALTIME;
 ```
 
 #### Change the maximum level of log types to print
@@ -63,10 +63,8 @@ SetLogClock(CLOCK_REALTIME);
 By default, FlexLog have `LOG_TYPE_INFO` as the maximum level of printable log type. This can be changed by calling:
 
 ``` c
-SetLogLevel(LOGGER_PRIMARY, LOG_TYPE_TRACE);
+SetLogLevel(LOGGER_CONSOLE, LOG_TYPE_TRACE);
 ```
-
-where there are only 2 loggers at the moment: `LOGGER_PRIMARY` and `LOGGER_SECONDARY`.
 
 
 ### License

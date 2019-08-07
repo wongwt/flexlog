@@ -9,11 +9,11 @@ LIB_DIR           := $(DESTDIR)$(PREFIX)/lib
 
 ## -- Compiler Settings
 CROSS             ?=
-CC                := $(CROSS)gcc
+CC                := $(CROSS)clang
 STD               := -std=gnu99
 
 override CPPFLAGS += -I.
-override CFLAGS   += $(STD) -O3 -Wall -Werror -Wextra -MP -MMD
+override CFLAGS   += $(STD) -Os -Wall -Werror -Wextra -MP -MMD
 override CFLAGS   += -D_GNU_SOURCE
 override LDFLAGS  += -L.
 override LDLIBS   += -lpthread
@@ -24,7 +24,7 @@ DEPENDS            = $(addsuffix .d,$(basename $(OBJECTS)))
 
 
 ## -- Compilation
-.PHONY: all debug lib test
+.PHONY: all debug lib
 .DELETE_ON_ERROR:
 
 all: CFLAGS       += -DNDEBUG
@@ -85,7 +85,7 @@ cppcheck:
 
 cpplint:
 	@cpplint --linelength=80 --recursive \
-		--filter=-build/header_guard,-build/include_subdir \
+		--filter=-build,-readability/casting \
 		.
 
 style:
@@ -94,5 +94,4 @@ style:
 		"*.c" "*.h"
 
 valgrind: clean debug
-	@sleep 0.5
 	@valgrind --leak-check=full --show-leak-kinds=all ./$(PROJECT)

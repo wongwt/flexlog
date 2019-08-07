@@ -1,62 +1,79 @@
-//! @brief      FlexLog file logger extension
-//!
 //! @author     "Wei-Te Wong" <wongwt@wongwt.net>
-//! @copyright  Copyright 2018 Wei-Te Wong. MIT Licensed.
+//! @copyright  Copyright 2019 Wei-Te Wong. MIT Licensed.
 #include "file_logger.h"
 
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-static FILE *handle = NULL;
+static FILE *stream = NULL;
 
-void PrintFileLog(log_s *log) {
-    if (handle == NULL) {
+static const char *FileLogTypeToStr(uint32_t type) {
+    switch (type) {
+        case LOG_TYPE_FATAL:
+            return "-F-";
+        case LOG_TYPE_ERROR:
+            return "-E-";
+        case LOG_TYPE_WARN:
+            return "-W-";
+        case LOG_TYPE_INFO:
+            return "-I-";
+        case LOG_TYPE_DEBUG:
+            return "-D-";
+        case LOG_TYPE_TRACE:
+            return "-T-";
+        default:
+            return "";
+    }
+}
+
+static void PrintFileLog(log_header_s *hdr, const char *log) {
+    if (!stream)
         return;
-    }
 
-    fprintf(handle, "[%s] %d <%s> %s\n", log->time_str, log->pid, log->type_str,
-            log->message);
-    fflush(handle);
+    fprintf(stream, "[%s] %s %s():%u %s\n",
+            hdr->time, FileLogTypeToStr(hdr->type), hdr->func, hdr->line, log);
+    fflush(stream);
 }
 
-int SetupFileLogger(void *arg) {
-    const char *path = arg;
+logger_s file_logger = { 0 };
 
-    if (handle != NULL) {
-        fprintf(stderr, "File logger is already setup\n");
-        return -EPERM;
+void SetupFileLogger(const char *path) {
+    if (stream) {
+        fprintf(stderr, "%s():%d %s; stream: %p\n",
+                __func__, __LINE__, strerror(EPERM), stream);
+        exit(EXIT_FAILURE);
     }
-    if (path == NULL || strlen(path) == 0) {
-        fprintf(stderr, "Invalid log file path\n");
-        return -EINVAL;
-    }
+
+    FlexLogLock(true);
 
     errno = 0;
-    handle = fopen(path, "a+");
-    if (handle == NULL) {
-        fprintf(stderr, "%s: Failed to open log file\n", strerror(errno));
-        return -errno;
+    stream = fopen(path, "a+");
+    if (!stream) {
+        fprintf(stderr, "%s():%d fopen(): %s; path: %s\n",
+                __func__, __LINE__, strerror(errno), path);
+        exit(EXIT_FAILURE);
     }
 
-    return 0;
+    file_logger.level = LOG_TYPE_TRACE;
+    file_logger.print = PrintFileLog;
+
+    FlexLogLock(false);
 }
 
-int UnsetFileLogger(void) {
-    if (handle == NULL) {
-        fprintf(stderr, "File logger is already unset\n");
-        return -EPERM;
-    }
+void UnsetFileLogger(void) {
+    if (!stream)
+        return;
 
-    fprintf(handle, "-*-*-*-*-*-*-*-*-\n");
-    fflush(handle);
+    FlexLogLock(true);
 
-    errno = 0;
-    int ret = fclose(handle);
-    if (ret != 0) {
-        fprintf(stderr, "%s: Failed to close log file\n", strerror(errno));
-        return -errno;
-    }
+    file_logger.level = LOG_TYPE_NONE;
+    file_logger.print = NULL;
 
-    return 0;
+    fprintf(stream, "-*-*-*-*-*-*-*-*-\n");
+    fflush(stream);
+    fclose(stream);
+
+    FlexLogLock(false);
 }
