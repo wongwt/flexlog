@@ -63,7 +63,7 @@ static clockid_t log_clock = CLOCK_REALTIME;
 By default, FlexLog have `LOG_TYPE_INFO` as the maximum level of printable log type. This can be changed by calling:
 
 ``` c
-SetLogLevel(LOGGER_CONSOLE, LOG_TYPE_TRACE);
+FlexLogSetLevel(LOGGER_CONSOLE, LOG_TYPE_TRACE);
 ```
 
 

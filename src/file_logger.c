@@ -41,8 +41,8 @@ logger_s file_logger = { 0 };
 
 void SetupFileLogger(const char *path) {
     if (stream) {
-        fprintf(stderr, "%s():%d %s; stream: %p\n",
-                __func__, __LINE__, strerror(EPERM), stream);
+        fprintf(stderr, "%s:%d %s; stream: %p\n",
+                __FILE__, __LINE__, strerror(EPERM), stream);
         exit(EXIT_FAILURE);
     }
 
@@ -51,8 +51,8 @@ void SetupFileLogger(const char *path) {
     errno = 0;
     stream = fopen(path, "a+");
     if (!stream) {
-        fprintf(stderr, "%s():%d fopen(): %s; path: %s\n",
-                __func__, __LINE__, strerror(errno), path);
+        fprintf(stderr, "%s:%d fopen(): %s; path: %s\n",
+                __FILE__, __LINE__, strerror(errno), path);
         exit(EXIT_FAILURE);
     }
 

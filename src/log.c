@@ -66,7 +66,7 @@ static logger_s console_logger = {
 
 #define ERROR_EXIT(f, ...)                                                  \
 do {                                                                        \
-    fprintf(stderr, "%s():%d " #f "\n", __func__, __LINE__, __VA_ARGS__);   \
+    fprintf(stderr, "%s:%d " #f "\n", __FILE__, __LINE__, __VA_ARGS__);     \
     exit(EXIT_FAILURE);                                                     \
 } while (0)
 
